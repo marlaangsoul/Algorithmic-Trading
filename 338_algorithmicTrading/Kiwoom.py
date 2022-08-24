@@ -20,6 +20,7 @@ class Kiwoom(QAxWidget):
     def _set_signal_slots(self):
         self.OnEventConnect.connect(self._event_connect)
         self.OnReceiveTrData.connect(self._receive_tr_data)
+        self.OnReceiveChejanData.connect(self._receive_chejan_data)
 
     def comm_connect(self):
         self.dynamicCall("CommConnect()")
@@ -73,6 +74,9 @@ class Kiwoom(QAxWidget):
         if rqname == "opt10081_req":
             self._opt10081(rqname, trcode)
 
+        elif rqname == "opw00001_req":
+            self._opw00001(rqname, trcode)
+
         try:
             self.tr_event_loop.exit()
         except AttributeError:
@@ -95,3 +99,37 @@ class Kiwoom(QAxWidget):
             self.ohlcv['low'].append(int(low))
             self.ohlcv['close'].append(int(close))
             self.ohlcv['volume'].append(int(volume))
+    def send_order(self, rqname, screen_no, acc_no, order_type, code, quantity, price, hoga, order_no):
+        self.dynamicCall("SendOrder(QString, QString, QString, int, QString, int, int, QString, QString)",
+                         [rqname, screen_no, acc_no, order_type, code, quantity, price, hoga, order_no])
+
+    def get_chejan_data(self, fid):
+        ret = self.dynamicCall("GetChejanData(int)", fid)
+        return ret
+
+    def _receive_chejan_data(self, gubun, item_cnt, fid_list):
+        print(gubun)
+        print(self.get_chejan_data(9203))
+        print(self.get_chejan_data(302))
+        print(self.get_chejan_data(900))
+        print(self.get_chejan_data(901))
+
+    def get_login_info(self, tag):
+        ret = self.dynamicCall("GetLoginInfo(QString)", tag)
+        return ret
+
+    def _opw00001(self, rqname, trcode):
+        self.d2_deposit = self._comm_get_data(trcode, "", rqname, 0, "d+2추정예수금")
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    kiwoom = Kiwoom()
+    kiwoom.comm_connect()
+
+    kiwoom.set_input_value("계좌번호", "8087711111")
+    kiwoom.set_input_value("비밀번호", "0000")
+    kiwoom.comm_rq_data("opw00001_req", "opw00001", 0, "2000")
+
+    print(kiwoom.d2_deposit)
+
+
