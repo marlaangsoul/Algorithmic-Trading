@@ -73,9 +73,10 @@ class Kiwoom(QAxWidget):
 
         if rqname == "opt10081_req":
             self._opt10081(rqname, trcode)
-
         elif rqname == "opw00001_req":
             self._opw00001(rqname, trcode)
+        elif rqname == "opw00018_req":
+            self._opw00018(rqname, trcode)
 
         try:
             self.tr_event_loop.exit()
@@ -121,14 +122,47 @@ class Kiwoom(QAxWidget):
     def _opw00001(self, rqname, trcode):
         self.d2_deposit = self._comm_get_data(trcode, "", rqname, 0, "d+2추정예수금")
 
+
+    @staticmethod
+    def change_format(data):
+        strip_data = data.lstrip('-0')
+        if strip_data == '':
+            strip_data = '0'
+
+        try:
+            format_data = format(int(strip_data), ',d')
+        except:
+            format_data = format(float(strip_data))
+
+        if data.startswith('-'):
+            format_data = '-' + format_data
+
+        return format_data
+
+    def _opw00018(self, rqname, trcode):
+        total_purchase_price = self._comm_get_data(trcode, "", rqname, 0, "총매입금액")
+        total_eval_price = self._comm_get_data(trcode, "", rqname, 0, "총평가금액")
+        total_eval_profit_loss_price = self._comm_get_data(trcode, "", rqname, 0, "총평가손익금액")
+        total_earning_rate = self._comm_get_data(trcode, "", rqname, 0, "총수익률(%)")
+        estimated_deposit = self._comm_get_data(trcode, "", rqname, 0, "추정예탁자산")
+
+        print(Kiwoom.change_format(total_purchase_price))
+        print(Kiwoom.change_format(total_eval_price))
+        print(Kiwoom.change_format(total_eval_profit_loss_price))
+        print(Kiwoom.change_format(total_earning_rate))
+        print(Kiwoom.change_format(estimated_deposit))
+
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     kiwoom = Kiwoom()
     kiwoom.comm_connect()
 
-    kiwoom.set_input_value("계좌번호", "8087711111")
-    kiwoom.set_input_value("비밀번호", "0000")
-    kiwoom.comm_rq_data("opw00001_req", "opw00001", 0, "2000")
+    account_number = kiwoom.get_login_info("ACCNO")
+    account_number = account_number.split(';')[0]
+
+    kiwoom.set_input_value("계좌번호", account_number)
+    kiwoom.comm_rq_data("opw00018_req", "opw00018", 0, "2000")
 
     print(kiwoom.d2_deposit)
 
